@@ -53,5 +53,4 @@ This Python script automates the execution of multiple Jupyter notebooks using `
 ## 🏆 Author
 Developed by Harun
 
-## 📜 License
-This script is provided under the MIT License.
+
