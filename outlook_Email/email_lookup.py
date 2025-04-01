@@ -1,19 +1,34 @@
+import win32com.client
 import pandas as pd
 
-# Load the first Excel file (Usernames only)
-df_users = pd.read_excel("excel1.xlsx")  # Assume column name is 'username'
+# Load Excel file
+file_path = "path/to/your/excel_file.xlsx"  # Change this to your actual file path
+sheet_name = "Sheet1"  # Change if needed
 
-# Load the second Excel file (Full names with usernames)
-df_full_names = pd.read_excel("excel2.xlsx")  # Assume columns are 'username' and 'full_name'
+df = pd.read_excel(file_path, sheet_name=sheet_name)
 
-# Normalize usernames (lowercase and strip spaces)
-df_users["username"] = df_users["username"].str.lower().str.strip()
-df_full_names["username"] = df_full_names["username"].str.lower().str.strip()
+# Ensure columns exist
+if "Full Name" not in df.columns:
+    raise ValueError("Excel file must contain a 'Full Name' column.")
 
-# Merge data to find matching full names
-df_merged = df_users.merge(df_full_names, on="username", how="left")
+# Initialize Outlook
+outlook = win32com.client.Dispatch("Outlook.Application")
+namespace = outlook.GetNamespace("MAPI")
+address_list = namespace.AddressLists.Item("Global Address List")  # Company contacts
+entries = address_list.AddressEntries
 
-# Save the merged result to a new Excel file
-df_merged.to_excel("matched_users.xlsx", index=False)
+# Function to find work email by full name
+def get_email(full_name):
+    for entry in entries:
+        if entry.Name.lower() == full_name.lower():
+            return entry.Address
+    return "Not Found"
 
-print("✅ Matching complete! Check 'matched_users.xlsx'.")
+# Apply function to each full name
+df["Work Email"] = df["Full Name"].apply(get_email)
+
+# Save results back to Excel
+output_file = "path/to/output_file.xlsx"  # Change path if needed
+df.to_excel(output_file, index=False)
+
+print(f"✅ Email lookup completed. Results saved to {output_file}")
